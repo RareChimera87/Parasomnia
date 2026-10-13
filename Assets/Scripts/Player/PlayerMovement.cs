@@ -12,6 +12,13 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Gravedad")]
     [SerializeField] float gravity = -25f;
+    [SerializeField] float fallMultiplier = 1.5f;
+    [SerializeField] float lowJumpMultiplier = 2f;
+
+    [Header("Salto")]
+    [SerializeField] float jumpHeight = 2f;
+    [SerializeField] float coyoteTime = 0.15f;
+    [SerializeField] float jumpBufferTime = 0.15f;
 
     [Header("Referencias")]
     [SerializeField] Transform cameraTransform;
@@ -20,6 +27,8 @@ public class PlayerMovement : MonoBehaviour
     PlayerInputHandler input;
     Vector3 horizontalVelocity;
     float verticalVelocity;
+    float coyoteTimer;
+    float jumpBufferTimer;
 
     void Awake()
     {
@@ -31,10 +40,14 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         HandleMovement();
+        HandleJump();
         HandleGravity();
 
         Vector3 velocity = horizontalVelocity + Vector3.up * verticalVelocity;
         controller.Move(velocity * Time.deltaTime);
+
+        if ((controller.collisionFlags & CollisionFlags.Above) != 0 && verticalVelocity > 0f)
+            verticalVelocity = 0f;
     }
 
     void HandleMovement()
@@ -61,11 +74,40 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    void HandleJump()
+    {
+        if (controller.isGrounded)
+            coyoteTimer = coyoteTime;
+        else
+            coyoteTimer -= Time.deltaTime;
+
+        if (input.JumpPressed)
+            jumpBufferTimer = jumpBufferTime;
+        else
+            jumpBufferTimer -= Time.deltaTime;
+
+        if (jumpBufferTimer > 0f && coyoteTimer > 0f)
+        {
+            verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            jumpBufferTimer = 0f;
+            coyoteTimer = 0f;
+        }
+    }
+
     void HandleGravity()
     {
         if (controller.isGrounded && verticalVelocity < 0f)
+        {
             verticalVelocity = -2f;
-        else
-            verticalVelocity += gravity * Time.deltaTime;
+            return;
+        }
+
+        float multiplier = 1f;
+        if (verticalVelocity < 0f)
+            multiplier = fallMultiplier;
+        else if (!input.JumpHeld)
+            multiplier = lowJumpMultiplier;
+
+        verticalVelocity += gravity * multiplier * Time.deltaTime;
     }
 }
