@@ -110,4 +110,13 @@ public class PlayerMovement : MonoBehaviour
 
         verticalVelocity += gravity * multiplier * Time.deltaTime;
     }
+
+    public void Teleport(Vector3 position)
+{
+    controller.enabled = false;
+    transform.position = position;
+    controller.enabled = true;
+    horizontalVelocity = Vector3.zero;
+    verticalVelocity = 0f;
+}
 }
