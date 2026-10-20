@@ -29,6 +29,7 @@ public class PlayerMovement : MonoBehaviour
     float verticalVelocity;
     float coyoteTimer;
     float jumpBufferTimer;
+    MovingPlatform currentPlatform;
 
     void Awake()
     {
@@ -39,6 +40,10 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        if (currentPlatform != null)
+            controller.Move(currentPlatform.Delta);
+        currentPlatform = null;
+
         HandleMovement();
         HandleJump();
         HandleGravity();
@@ -111,12 +116,18 @@ public class PlayerMovement : MonoBehaviour
         verticalVelocity += gravity * multiplier * Time.deltaTime;
     }
 
+    void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (hit.normal.y > 0.5f)
+            currentPlatform = hit.collider.GetComponentInParent<MovingPlatform>();
+    }
+
     public void Teleport(Vector3 position)
-{
-    controller.enabled = false;
-    transform.position = position;
-    controller.enabled = true;
-    horizontalVelocity = Vector3.zero;
-    verticalVelocity = 0f;
-}
+    {
+        controller.enabled = false;
+        transform.position = position;
+        controller.enabled = true;
+        horizontalVelocity = Vector3.zero;
+        verticalVelocity = 0f;
+    }
 }
