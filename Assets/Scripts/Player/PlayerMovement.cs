@@ -30,6 +30,7 @@ public class PlayerMovement : MonoBehaviour
     float coyoteTimer;
     float jumpBufferTimer;
     MovingPlatform currentPlatform;
+    bool hitHazard;
 
     void Awake()
     {
@@ -42,6 +43,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (currentPlatform != null)
             controller.Move(currentPlatform.Delta);
+
         currentPlatform = null;
 
         HandleMovement();
@@ -50,6 +52,12 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 velocity = horizontalVelocity + Vector3.up * verticalVelocity;
         controller.Move(velocity * Time.deltaTime);
+        if (hitHazard)
+        {
+            hitHazard = false;
+            GameManager.Instance.PlayerDied();
+            return;
+        }
 
         if ((controller.collisionFlags & CollisionFlags.Above) != 0 && verticalVelocity > 0f)
             verticalVelocity = 0f;
@@ -118,6 +126,9 @@ public class PlayerMovement : MonoBehaviour
 
     void OnControllerColliderHit(ControllerColliderHit hit)
     {
+        if (hit.collider.GetComponentInParent<Hazard>() != null)
+            hitHazard = true;
+
         if (hit.normal.y > 0.5f)
             currentPlatform = hit.collider.GetComponentInParent<MovingPlatform>();
     }

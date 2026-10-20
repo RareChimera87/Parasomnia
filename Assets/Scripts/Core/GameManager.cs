@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
 
     public int Lives { get; private set; }
     Vector3 checkpointPosition;
+    float lastDeathTime = -999f;
 
     void Awake()
     {
@@ -35,6 +36,8 @@ public class GameManager : MonoBehaviour
 
     public void PlayerDied()
     {
+        if (Time.time - lastDeathTime < 0.5f) return;
+        lastDeathTime = Time.time;
         Lives--;
         Debug.Log($"Vidas restantes: {Lives}");
         OnLivesChanged?.Invoke(Lives);
