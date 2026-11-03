@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
 
     public UnityEvent<int> OnLivesChanged;
     public UnityEvent OnGameOver;
+    public UnityEvent OnPlayerRespawned;
 
     public int Lives { get; private set; }
     Vector3 checkpointPosition;
@@ -49,6 +50,7 @@ public class GameManager : MonoBehaviour
         }
 
         player.Teleport(checkpointPosition);
+        OnPlayerRespawned?.Invoke();
     }
 
     void GameOver()

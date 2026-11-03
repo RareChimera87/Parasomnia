@@ -5,6 +5,7 @@ using UnityEngine.Events;
 public class Flashlight : MonoBehaviour
 {
     [SerializeField] Light spotLight;
+    [SerializeField] LayerMask obstacleMask = ~0;
 
     [Header("Batería")]
     [SerializeField] float maxBattery = 100f;
@@ -72,4 +73,22 @@ public class Flashlight : MonoBehaviour
         battery = Mathf.Min(battery + amount, maxBattery);
         OnBatteryChanged?.Invoke(Battery01);
     }
+
+    public bool IsIlluminating(Vector3 point)
+{
+    if (!IsOn) return false;
+
+    Vector3 origin = spotLight.transform.position;
+    Vector3 toPoint = point - origin;
+
+    if (toPoint.magnitude > spotLight.range) return false;
+
+    float angle = Vector3.Angle(spotLight.transform.forward, toPoint);
+    if (angle > spotLight.spotAngle * 0.5f) return false;
+
+    if (Physics.Linecast(origin, point, obstacleMask, QueryTriggerInteraction.Ignore))
+        return false;
+
+    return true;
+}
 }
