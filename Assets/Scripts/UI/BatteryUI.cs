@@ -8,6 +8,8 @@ public class BatteryUI : MonoBehaviour
     [SerializeField] Color normalColor = Color.yellow;
     [SerializeField] Color lowColor = Color.red;
     [SerializeField] float lowThreshold = 0.2f;
+    [SerializeField] float emptyFill = 0.06f;
+    [SerializeField] float fullFill = 0.85f;
 
     void Start()
     {
@@ -23,7 +25,7 @@ public class BatteryUI : MonoBehaviour
 
     void UpdateBar(float value)
     {
-        fillImage.fillAmount = value;
+        fillImage.fillAmount = Mathf.Lerp(emptyFill, fullFill, value);
         fillImage.color = value < lowThreshold ? lowColor : normalColor;
     }
 }
