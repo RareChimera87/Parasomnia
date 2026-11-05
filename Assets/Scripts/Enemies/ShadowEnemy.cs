@@ -4,11 +4,18 @@ using UnityEngine;
 public class ShadowEnemy : MonoBehaviour
 {
     enum State { Idle, Chasing, Stunned, Banished, Returning }
+    public enum ActivationMode { Proximity, Light, Sight }
 
     [Header("Referencias")]
     [SerializeField] GameObject visual;
     [SerializeField] Transform player;
     [SerializeField] Flashlight flashlight;
+
+    [Header("Activación")]
+    [SerializeField] ActivationMode activation = ActivationMode.Light;
+    [SerializeField] bool hideWhileIdle = true;
+    [SerializeField] float viewAngle = 90f;
+    [SerializeField] float eyeHeight = 0.5f;
 
     [Header("Detección")]
     [SerializeField] float detectionRadius = 12f;
@@ -18,7 +25,7 @@ public class ShadowEnemy : MonoBehaviour
     [SerializeField] float chaseSpeed = 4f;
     [SerializeField] float retreatSpeed = 2f;
     [SerializeField] float returnSpeed = 3f;
-     [SerializeField] float targetHeight = 0.8f;
+    [SerializeField] float targetHeight = 0.8f;
 
     [Header("Luz")]
     [SerializeField] float timeToBanish = 2f;
@@ -29,16 +36,19 @@ public class ShadowEnemy : MonoBehaviour
     [SerializeField] State state = State.Idle;
 
     Vector3 homePosition;
+    Quaternion homeRotation;
     float lightTimer;
     float banishTimer;
     Collider[] colliders;
 
-    float DistanceToPlayer => Vector3.Distance(transform.position, player.position);
+    Vector3 PlayerTarget => player.position + Vector3.up * targetHeight;
+    float DistanceToPlayer => Vector3.Distance(transform.position, PlayerTarget);
     bool IsLit => flashlight.IsIlluminating(transform.position);
 
     void Awake()
     {
         homePosition = transform.position;
+        homeRotation = transform.rotation;
         colliders = GetComponentsInChildren<Collider>();
         GetComponent<Rigidbody>().isKinematic = true;
 
@@ -49,6 +59,7 @@ public class ShadowEnemy : MonoBehaviour
     void Start()
     {
         GameManager.Instance.OnPlayerRespawned.AddListener(ResetEnemy);
+        ResetEnemy();
     }
 
     void OnDestroy()
@@ -69,12 +80,43 @@ public class ShadowEnemy : MonoBehaviour
         }
     }
 
+    // ---------- Activación ----------
+
+    bool ShouldActivate()
+    {
+        if (DistanceToPlayer > detectionRadius) return false;
+
+        switch (activation)
+        {
+            case ActivationMode.Light: return flashlight.IsOn;
+            case ActivationMode.Sight: return CanSeePlayer();
+            default:                   return true;
+        }
+    }
+
+    bool CanSeePlayer()
+    {
+        Vector3 eye = transform.position + Vector3.up * eyeHeight;
+        Vector3 toPlayer = PlayerTarget - eye;
+
+        if (Vector3.Angle(transform.forward, toPlayer) > viewAngle * 0.5f)
+            return false;
+
+        if (Physics.Linecast(eye, PlayerTarget, out RaycastHit hit, ~0, QueryTriggerInteraction.Ignore))
+            return hit.collider.CompareTag("Player");
+
+        return true;
+    }
+
     // ---------- Estados ----------
 
     void UpdateIdle()
     {
-        if (DistanceToPlayer <= detectionRadius)
+        if (ShouldActivate())
+        {
+            SetVisible(true);
             SetState(State.Chasing);
+        }
     }
 
     void UpdateChasing()
@@ -92,7 +134,7 @@ public class ShadowEnemy : MonoBehaviour
         }
 
         lightTimer = Mathf.Max(lightTimer - Time.deltaTime * 0.5f, 0f);
-        MoveTowards(player.position + Vector3.up * targetHeight, chaseSpeed);
+        MoveTowards(PlayerTarget, chaseSpeed);
     }
 
     void UpdateStunned()
@@ -105,8 +147,9 @@ public class ShadowEnemy : MonoBehaviour
 
         lightTimer += Time.deltaTime;
 
-        Vector3 away = (transform.position - player.position).normalized;
-        transform.position += away * retreatSpeed * Time.deltaTime;
+        Vector3 away = (transform.position - player.position);
+        away.y = 0f;
+        transform.position += away.normalized * retreatSpeed * Time.deltaTime;
 
         visual.transform.localPosition = Random.insideUnitSphere * shakeAmount;
 
@@ -123,7 +166,7 @@ public class ShadowEnemy : MonoBehaviour
 
     void UpdateReturning()
     {
-        if (DistanceToPlayer <= detectionRadius)
+        if (ShouldActivate())
         {
             SetState(State.Chasing);
             return;
@@ -132,7 +175,7 @@ public class ShadowEnemy : MonoBehaviour
         MoveTowards(homePosition, returnSpeed);
 
         if (transform.position == homePosition)
-            SetState(State.Idle);
+            ResetEnemy();
     }
 
     // ---------- Acciones ----------
@@ -157,9 +200,9 @@ public class ShadowEnemy : MonoBehaviour
 
     void ResetEnemy()
     {
-        transform.position = homePosition;
+        transform.SetPositionAndRotation(homePosition, homeRotation);
         lightTimer = 0f;
-        SetVisible(true);
+        SetVisible(!hideWhileIdle);
         SetState(State.Idle);
     }
 
@@ -182,5 +225,15 @@ public class ShadowEnemy : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
         Gizmos.color = Color.gray;
         Gizmos.DrawWireSphere(transform.position, giveUpRadius);
+
+        if (activation == ActivationMode.Sight)
+        {
+            Vector3 eye = transform.position + Vector3.up * eyeHeight;
+            Vector3 left = Quaternion.Euler(0, -viewAngle * 0.5f, 0) * transform.forward;
+            Vector3 right = Quaternion.Euler(0, viewAngle * 0.5f, 0) * transform.forward;
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(eye, eye + left * detectionRadius);
+            Gizmos.DrawLine(eye, eye + right * detectionRadius);
+        }
     }
 }
