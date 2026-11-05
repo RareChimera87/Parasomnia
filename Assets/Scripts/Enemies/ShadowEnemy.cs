@@ -18,6 +18,7 @@ public class ShadowEnemy : MonoBehaviour
     [SerializeField] float chaseSpeed = 4f;
     [SerializeField] float retreatSpeed = 2f;
     [SerializeField] float returnSpeed = 3f;
+     [SerializeField] float targetHeight = 0.8f;
 
     [Header("Luz")]
     [SerializeField] float timeToBanish = 2f;
@@ -91,7 +92,7 @@ public class ShadowEnemy : MonoBehaviour
         }
 
         lightTimer = Mathf.Max(lightTimer - Time.deltaTime * 0.5f, 0f);
-        MoveTowards(player.position, chaseSpeed);
+        MoveTowards(player.position + Vector3.up * targetHeight, chaseSpeed);
     }
 
     void UpdateStunned()
