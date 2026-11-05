@@ -11,6 +11,7 @@ public class Flashlight : MonoBehaviour
     [SerializeField] float maxBattery = 100f;
     [SerializeField] float drainPerSecond = 5f;
     [SerializeField] float lowBatteryThreshold = 0.2f;
+    [SerializeField] bool debugLight = false;
 
     public UnityEvent<float> OnBatteryChanged;
 
@@ -81,14 +82,28 @@ public class Flashlight : MonoBehaviour
     Vector3 origin = spotLight.transform.position;
     Vector3 toPoint = point - origin;
 
-    if (toPoint.magnitude > spotLight.range) return false;
+    if (toPoint.magnitude > spotLight.range)
+    {
+        if (debugLight) Debug.Log($"Luz: fuera de alcance ({toPoint.magnitude:F1} m > {spotLight.range} m)");
+        return false;
+    }
 
     float angle = Vector3.Angle(spotLight.transform.forward, toPoint);
-    if (angle > spotLight.spotAngle * 0.5f) return false;
-
-    if (Physics.Linecast(origin, point, obstacleMask, QueryTriggerInteraction.Ignore))
+    if (angle > spotLight.spotAngle * 0.5f)
+    {
+        if (debugLight) Debug.Log($"Luz: fuera del cono ({angle:F0}° > {spotLight.spotAngle * 0.5f:F0}°)");
         return false;
+    }
 
+    if (Physics.Linecast(origin, point, out RaycastHit hit, obstacleMask, QueryTriggerInteraction.Ignore))
+    {
+        if (debugLight) Debug.Log($"Luz: bloqueada por {hit.collider.name}");
+        if (debugLight) Debug.DrawLine(origin, hit.point, Color.red);
+        return false;
+    }
+
+    if (debugLight) Debug.Log("Luz: ILUMINADO");
+    if (debugLight) Debug.DrawLine(origin, point, Color.green);
     return true;
 }
 }

@@ -5,8 +5,8 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movimiento")]
-    [SerializeField] float walkSpeed = 5f;
-    [SerializeField] float sprintSpeed = 8f;
+    [SerializeField] float walkSpeed = 3.5f;
+    [SerializeField] float sprintSpeed = 6f;
     [SerializeField] float acceleration = 10f;
     [SerializeField] float rotationSpeed = 12f;
 
@@ -16,12 +16,22 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float lowJumpMultiplier = 2f;
 
     [Header("Salto")]
-    [SerializeField] float jumpHeight = 2f;
+    [SerializeField] float jumpHeight = 1.5f;
     [SerializeField] float coyoteTime = 0.15f;
     [SerializeField] float jumpBufferTime = 0.15f;
 
+    [Header("Escalar")]                                   // NUEVO
+    [SerializeField] float climbSpeed = 2.5f;
+    [SerializeField] float climbCheckDistance = 0.6f;
+    [SerializeField] float climbCheckHeight = 0.65f;
+    [SerializeField] float wallJumpPush = 4f;
+    [SerializeField] float ledgeHopHeight = 0.9f;
+    [SerializeField] float regrabDelay = 0.3f;
+
     [Header("Referencias")]
     [SerializeField] Transform cameraTransform;
+
+    public bool IsClimbing { get; private set; }          // NUEVO
 
     CharacterController controller;
     PlayerInputHandler input;
@@ -31,6 +41,8 @@ public class PlayerMovement : MonoBehaviour
     float jumpBufferTimer;
     MovingPlatform currentPlatform;
     bool hitHazard;
+    Vector3 wallNormal;                                   // NUEVO
+    float regrabTimer;                                    // NUEVO
 
     void Awake()
     {
@@ -43,24 +55,34 @@ public class PlayerMovement : MonoBehaviour
     {
         if (currentPlatform != null)
             controller.Move(currentPlatform.Delta);
-
         currentPlatform = null;
 
-        HandleMovement();
-        HandleJump();
-        HandleGravity();
+        regrabTimer -= Time.deltaTime;                    // NUEVO
 
-        Vector3 velocity = horizontalVelocity + Vector3.up * verticalVelocity;
-        controller.Move(velocity * Time.deltaTime);
+        if (IsClimbing)                                   // NUEVO
+        {
+            HandleClimbing();
+        }
+        else
+        {
+            if (TryStartClimb()) return;
+
+            HandleMovement();
+            HandleJump();
+            HandleGravity();
+
+            Vector3 velocity = horizontalVelocity + Vector3.up * verticalVelocity;
+            controller.Move(velocity * Time.deltaTime);
+
+            if ((controller.collisionFlags & CollisionFlags.Above) != 0 && verticalVelocity > 0f)
+                verticalVelocity = 0f;
+        }
+
         if (hitHazard)
         {
             hitHazard = false;
             GameManager.Instance.PlayerDied();
-            return;
         }
-
-        if ((controller.collisionFlags & CollisionFlags.Above) != 0 && verticalVelocity > 0f)
-            verticalVelocity = 0f;
     }
 
     void HandleMovement()
@@ -124,27 +146,115 @@ public class PlayerMovement : MonoBehaviour
         verticalVelocity += gravity * multiplier * Time.deltaTime;
     }
 
-    void OnControllerColliderHit(ControllerColliderHit hit)
-{
-    if (hit.collider.GetComponentInParent<Hazard>() != null)
-        hitHazard = true;
+    // ---------- Escalar (NUEVO) ----------
 
-    if (hit.normal.y > 0.5f)
+    bool FindClimbableWall(out RaycastHit hit)
     {
-        currentPlatform = hit.collider.GetComponentInParent<MovingPlatform>();
-
-        FallingPlatform fallingPlatform = hit.collider.GetComponentInParent<FallingPlatform>();
-        if (fallingPlatform != null)
-            fallingPlatform.Trigger();
+        Vector3 origin = transform.position + Vector3.up * climbCheckHeight;
+        if (Physics.Raycast(origin, transform.forward, out hit, climbCheckDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            bool isWall = Mathf.Abs(hit.normal.y) < 0.3f;
+            bool climbable = hit.collider.GetComponentInParent<Climbable>() != null;
+            return isWall && climbable;
+        }
+        return false;
     }
-}
+
+    bool TryStartClimb()
+    {
+        if (regrabTimer > 0f) return false;
+        if (input.MoveInput.sqrMagnitude < 0.25f) return false;
+        if (!FindClimbableWall(out RaycastHit hit)) return false;
+
+        IsClimbing = true;
+        wallNormal = hit.normal;
+        horizontalVelocity = Vector3.zero;
+        verticalVelocity = 0f;
+        transform.rotation = Quaternion.LookRotation(-wallNormal);
+        return true;
+    }
+
+    void HandleClimbing()
+    {
+        // Saltar hacia atrás para soltarse
+        if (input.JumpPressed)
+        {
+            StopClimbing();
+            verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity) * 0.8f;
+            horizontalVelocity = wallNormal * wallJumpPush;
+            transform.rotation = Quaternion.LookRotation(wallNormal);
+            return;
+        }
+
+        Vector2 move = input.MoveInput;
+
+        // Se acabó la pared: si iba subiendo, impulso para quedar encima del borde
+        if (!FindClimbableWall(out RaycastHit hit))
+        {
+            StopClimbing();
+            if (move.y > 0.1f)
+            {
+                verticalVelocity = Mathf.Sqrt(ledgeHopHeight * -2f * gravity);
+                horizontalVelocity = -wallNormal * 2f;
+            }
+            return;
+        }
+
+        wallNormal = hit.normal;
+        transform.rotation = Quaternion.LookRotation(-wallNormal);
+
+        // Bajó hasta el suelo: se suelta
+        if (controller.isGrounded && move.y < -0.1f)
+        {
+            StopClimbing();
+            return;
+        }
+
+        Vector3 right = Vector3.Cross(Vector3.up, -wallNormal);
+        Vector3 climbMove = (Vector3.up * move.y + right * move.x) * climbSpeed;
+        Vector3 stickToWall = -wallNormal * 0.5f;
+
+        controller.Move((climbMove + stickToWall) * Time.deltaTime);
+    }
+
+    void StopClimbing()
+    {
+        IsClimbing = false;
+        regrabTimer = regrabDelay;
+        coyoteTimer = 0f;
+    }
+
+    // ---------- Colisiones y utilidades ----------
+
+    void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (hit.collider.GetComponentInParent<Hazard>() != null)
+            hitHazard = true;
+
+        if (hit.normal.y > 0.5f)
+        {
+            currentPlatform = hit.collider.GetComponentInParent<MovingPlatform>();
+
+            FallingPlatform fallingPlatform = hit.collider.GetComponentInParent<FallingPlatform>();
+            if (fallingPlatform != null)
+                fallingPlatform.Trigger();
+        }
+    }
 
     public void Teleport(Vector3 position)
     {
+        IsClimbing = false;                               // NUEVO
         controller.enabled = false;
         transform.position = position;
         controller.enabled = true;
         horizontalVelocity = Vector3.zero;
         verticalVelocity = 0f;
+    }
+
+    void OnDrawGizmosSelected()                           // NUEVO
+    {
+        Gizmos.color = Color.cyan;
+        Vector3 origin = transform.position + Vector3.up * climbCheckHeight;
+        Gizmos.DrawLine(origin, origin + transform.forward * climbCheckDistance);
     }
 }
