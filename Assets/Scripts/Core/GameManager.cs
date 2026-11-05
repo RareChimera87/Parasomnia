@@ -6,57 +6,38 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    [SerializeField] int maxLives = 3;
-    [SerializeField] Transform spawnPoint;
-    [SerializeField] PlayerMovement player;
+    [SerializeField] GameOverScreen gameOverScreen;
+    [SerializeField] CursorLock cursorLock;
 
-    public UnityEvent<int> OnLivesChanged;
-    public UnityEvent OnGameOver;
+    public UnityEvent OnPlayerDied;
     public UnityEvent OnPlayerRespawned;
 
-    public int Lives { get; private set; }
-    Vector3 checkpointPosition;
-    float lastDeathTime = -999f;
+    public bool IsGameOver { get; private set; }
 
     void Awake()
     {
         Instance = this;
-        Lives = maxLives;
-        checkpointPosition = spawnPoint.position;
-    }
-
-    void Start()
-    {
-        OnLivesChanged?.Invoke(Lives);
-    }
-
-    public void SetCheckpoint(Vector3 position)
-    {
-        checkpointPosition = position;
+        Time.timeScale = 1f;
     }
 
     public void PlayerDied()
     {
-        if (Time.time - lastDeathTime < 0.5f) return;
-        lastDeathTime = Time.time;
-        Lives--;
-        Debug.Log($"Vidas restantes: {Lives}");
-        OnLivesChanged?.Invoke(Lives);
+        if (IsGameOver) return;
+        IsGameOver = true;
+        OnPlayerDied?.Invoke();
 
-        if (Lives <= 0)
-        {
-            GameOver();
-            return;
-        }
+        Time.timeScale = 0f;
 
-        player.Teleport(checkpointPosition);
-        OnPlayerRespawned?.Invoke();
+        if (cursorLock != null) cursorLock.enabled = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        gameOverScreen.Show();
     }
 
-    void GameOver()
+    public void RestartLevel()
     {
-        Debug.Log("GAME OVER");
-        OnGameOver?.Invoke();
+        Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }
