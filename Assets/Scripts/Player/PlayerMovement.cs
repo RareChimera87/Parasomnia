@@ -125,13 +125,19 @@ public class PlayerMovement : MonoBehaviour
     }
 
     void OnControllerColliderHit(ControllerColliderHit hit)
-    {
-        if (hit.collider.GetComponentInParent<Hazard>() != null)
-            hitHazard = true;
+{
+    if (hit.collider.GetComponentInParent<Hazard>() != null)
+        hitHazard = true;
 
-        if (hit.normal.y > 0.5f)
-            currentPlatform = hit.collider.GetComponentInParent<MovingPlatform>();
+    if (hit.normal.y > 0.5f)
+    {
+        currentPlatform = hit.collider.GetComponentInParent<MovingPlatform>();
+
+        FallingPlatform fallingPlatform = hit.collider.GetComponentInParent<FallingPlatform>();
+        if (fallingPlatform != null)
+            fallingPlatform.Trigger();
     }
+}
 
     public void Teleport(Vector3 position)
     {

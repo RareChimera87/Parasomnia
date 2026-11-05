@@ -29,6 +29,6 @@ public class PlayerInputHandler : MonoBehaviour
         JumpHeld = jumpAction.IsPressed();
         SprintHeld = sprintAction.IsPressed();
         FlashlightPressed = flashlightAction.WasPressedThisFrame();
-        Debug.Log(MoveInput);
+        //Debug.Log(MoveInput);
     }
 }
