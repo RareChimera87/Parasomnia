@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 using Unity.Cinemachine;
 
@@ -6,31 +5,49 @@ public class CameraShake : MonoBehaviour
 {
     public static CameraShake Instance { get; private set; }
 
-    [SerializeField] CinemachineBasicMultiChannelPerlin noise;
+    [SerializeField] CinemachineCameraOffset cameraOffset;
 
-    Coroutine current;
+    float strength;
+    float duration;
+    float timer;
 
     void Awake()
     {
         Instance = this;
-        noise.AmplitudeGain = 0f;
+        if (cameraOffset == null) cameraOffset = GetComponent<CinemachineCameraOffset>();
     }
 
-    public void Shake(float amplitude, float duration)
+       public void Shake(float newStrength, float newDuration)
     {
-        if (current != null) StopCoroutine(current);
-        current = StartCoroutine(ShakeRoutine(amplitude, duration));
+        Debug.Log($"Shake pedido: fuerza {newStrength}, duración {newDuration}");
+
+        float current = timer > 0f ? strength * (timer / duration) : 0f;
+        if (newStrength < current) return;
+
+        strength = newStrength;
+        duration = newDuration;
+        timer = newDuration;
     }
 
-    IEnumerator ShakeRoutine(float amplitude, float duration)
+        void Update()
     {
-        float t = 0f;
-        while (t < duration)
+        if (timer > 0f)
         {
-            t += Time.deltaTime;
-            noise.AmplitudeGain = Mathf.Lerp(amplitude, 0f, t / duration);
-            yield return null;
+            float current = strength * Mathf.Clamp01(timer / duration);
+            cameraOffset.Offset = Random.insideUnitSphere * current;
+
+            float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+            timer -= dt;
         }
-        noise.AmplitudeGain = 0f;
+        else
+        {
+            cameraOffset.Offset = Vector3.zero;
+        }
+    }
+
+        [ContextMenu("Probar temblor")]
+    void TestShake()
+    {
+        Shake(0.3f, 0.5f);
     }
 }
