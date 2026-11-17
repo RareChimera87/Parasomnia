@@ -17,6 +17,10 @@ public class Flashlight : MonoBehaviour
     [SerializeField] Renderer lensRenderer;
     [SerializeField] Color lensColor = new Color(0.95f, 0.9f, 0.72f);
     [SerializeField] float lensIntensity = 3f;
+    [Header("Sonido")]
+    [SerializeField] AudioSource audioSource;
+    [SerializeField] AudioClip onClip;
+    [SerializeField] AudioClip offClip;
 
     public UnityEvent<float> OnBatteryChanged;
 
@@ -60,6 +64,7 @@ public class Flashlight : MonoBehaviour
         if (battery <= 0f)
         {
             SetOn(false);
+            PlaySound(offClip);
             return;
         }
 
@@ -73,10 +78,21 @@ public class Flashlight : MonoBehaviour
 
     void Toggle()
     {
-        if (!IsOn && battery <= 0f) return;
+        if (!IsOn && battery <= 0f)
+        {
+            PlaySound(offClip);
+            return;
+        }
+
         SetOn(!IsOn);
+        PlaySound(IsOn ? onClip : offClip);
     }
 
+    void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+            audioSource.PlayOneShot(clip);
+    }
     void SetOn(bool on)
     {
         IsOn = on;
