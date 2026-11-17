@@ -40,7 +40,7 @@ public class PlayerMovement : MonoBehaviour
     float coyoteTimer;
     float jumpBufferTimer;
     MovingPlatform currentPlatform;
-    bool hitHazard;
+    Hazard hitHazard;
     Vector3 wallNormal;                                   // NUEVO
     float regrabTimer;                                    // NUEVO
 
@@ -78,10 +78,11 @@ public class PlayerMovement : MonoBehaviour
                 verticalVelocity = 0f;
         }
 
-        if (hitHazard)
+        if (hitHazard != null)
         {
-            hitHazard = false;
-            GameManager.Instance.PlayerDied();
+            DeathCause cause = hitHazard.Cause;
+            hitHazard = null;
+            GameManager.Instance.PlayerDied(cause);
         }
     }
 
@@ -228,8 +229,9 @@ public class PlayerMovement : MonoBehaviour
 
     void OnControllerColliderHit(ControllerColliderHit hit)
     {
-        if (hit.collider.GetComponentInParent<Hazard>() != null)
-            hitHazard = true;
+        Hazard hazard = hit.collider.GetComponentInParent<Hazard>();
+        if (hazard != null)
+            hitHazard = hazard;
 
         if (hit.normal.y > 0.5f)
         {

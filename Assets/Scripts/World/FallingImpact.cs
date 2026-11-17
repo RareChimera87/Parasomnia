@@ -15,6 +15,10 @@ public class FallingImpact : MonoBehaviour
     [Header("Distancia")]
     [SerializeField] float maxDistance = 25f;
 
+    [Header("Sonido")]
+    [SerializeField] AudioSource audioSource;
+    [SerializeField] AudioClip impactClip;
+
     Rigidbody rb;
     bool falling;
 
@@ -42,9 +46,11 @@ public class FallingImpact : MonoBehaviour
         if (collision.relativeVelocity.magnitude < minImpactSpeed) return;
 
         ShakeCamera(impactStrength, impactDuration);
+        if (audioSource != null && impactClip != null)
+            audioSource.PlayOneShot(impactClip);
     }
 
-        void ShakeCamera(float strength, float duration)
+    void ShakeCamera(float strength, float duration)
     {
         if (CameraShake.Instance == null)
         {

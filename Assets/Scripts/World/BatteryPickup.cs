@@ -4,6 +4,7 @@ public class BatteryPickup : MonoBehaviour
 {
     [SerializeField] float amount = 40f;
     [SerializeField] float rotationSpeed = 90f;
+    [SerializeField] AudioClip pickupClip;
 
     void Update()
     {
@@ -18,6 +19,8 @@ public class BatteryPickup : MonoBehaviour
         if (flashlight == null) return;
 
         flashlight.Recharge(amount);
+        if (pickupClip != null)
+            AudioSource.PlayClipAtPoint(pickupClip, transform.position);
         Destroy(gameObject);
     }
 }

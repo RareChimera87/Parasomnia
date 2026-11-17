@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
+public enum DeathCause { General, Caida, Dientes, Aplastado, Monstruo, Ojos }
+
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
@@ -10,6 +12,15 @@ public class GameManager : MonoBehaviour
     [SerializeField] VictoryScreen victoryScreen;
     [SerializeField] CursorLock cursorLock;
     [SerializeField] string menuSceneName = "MainMenu";
+
+    [Header("Sonidos de muerte")]
+    [SerializeField] AudioSource sfxSource;
+    [SerializeField] AudioClip generalDeath;
+    [SerializeField] AudioClip fallDeath;
+    [SerializeField] AudioClip teethDeath;
+    [SerializeField] AudioClip crushedDeath;
+    [SerializeField] AudioClip monsterDeath;
+    [SerializeField] AudioClip eyesDeath;
 
     public UnityEvent OnPlayerDied;
     public UnityEvent OnPlayerRespawned;
@@ -22,12 +33,29 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
     }
 
-    public void PlayerDied()
+    public void PlayerDied(DeathCause cause = DeathCause.General)
     {
         if (IsGameOver) return;
         EndGame();
         OnPlayerDied?.Invoke();
+        PlayDeathSound(cause);
         gameOverScreen.Show();
+    }
+
+    void PlayDeathSound(DeathCause cause)
+    {
+        AudioClip clip = cause switch
+        {
+            DeathCause.Caida => fallDeath,
+            DeathCause.Dientes => teethDeath,
+            DeathCause.Aplastado => crushedDeath,
+            DeathCause.Monstruo => monsterDeath,
+            DeathCause.Ojos => eyesDeath,
+            _ => generalDeath
+        };
+
+        if (clip == null) clip = generalDeath;
+        if (sfxSource != null && clip != null) sfxSource.PlayOneShot(clip);
     }
 
     public void PlayerWon()

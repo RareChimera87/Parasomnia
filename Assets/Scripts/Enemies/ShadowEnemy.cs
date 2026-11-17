@@ -44,6 +44,7 @@ public class ShadowEnemy : MonoBehaviour
     Vector3 PlayerTarget => player.position + Vector3.up * targetHeight;
     float DistanceToPlayer => Vector3.Distance(transform.position, PlayerTarget);
     bool IsLit => flashlight.IsIlluminating(transform.position);
+    public bool IsActive => state == State.Chasing || state == State.Stunned;
 
     void Awake()
     {
