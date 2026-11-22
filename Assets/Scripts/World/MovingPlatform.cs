@@ -6,7 +6,7 @@ public class MovingPlatform : MonoBehaviour
     public enum Axis { X, Y, Z, Custom }
 
     [Header("Recorrido")]
-    [SerializeField] Axis axis = Axis.Z;
+    [SerializeField] Axis axis = Axis.X;
     [SerializeField] float distance = 5f;
     [SerializeField] Vector3 customOffset = new Vector3(0f, 0f, 5f);
     [SerializeField] bool useLocalAxis = false;
@@ -16,64 +16,69 @@ public class MovingPlatform : MonoBehaviour
     [SerializeField] float waitTime = 1f;
     [SerializeField] float startDelay = 0f;
 
+    // Cuánto se movió este frame (lo usa PlayerMovement para arrastrar al jugador)
     public Vector3 Delta { get; private set; }
+
+    enum Phase { Waiting, Moving }
 
     Vector3 startPos;
     Vector3 endPos;
-    Vector3 target;
-    float waitTimer;
+    Phase phase = Phase.Waiting;
+    float timer;
+    bool goingToEnd = true;
 
     void Start()
     {
         startPos = transform.position;
         endPos = startPos + GetOffset();
-        target = endPos;
-        waitTimer = startDelay;
+        timer = startDelay;
     }
 
     void Update()
     {
-        Vector3 previous = transform.position;
+        Delta = Vector3.zero;
 
-        if (waitTimer > 0f)
+        if (phase == Phase.Waiting)
         {
-            waitTimer -= Time.deltaTime;
-        }
-        else
-        {
-            transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
-
-            if (transform.position == target)
-            {
-                target = (target == endPos) ? startPos : endPos;
-                waitTimer = waitTime;
-            }
+            timer -= Time.deltaTime;
+            if (timer <= 0f) phase = Phase.Moving;
+            return;
         }
 
-        Delta = transform.position - previous;
+        Vector3 target = goingToEnd ? endPos : startPos;
+        Vector3 before = transform.position;
+
+        Vector3 next = Vector3.MoveTowards(before, target, speed * Time.deltaTime);
+        transform.position = next;
+        Delta = next - before;
+
+        // Llegó al destino (con margen por el error de decimales): espera y cambia de dirección
+        if ((next - target).sqrMagnitude < 0.0001f)
+        {
+            goingToEnd = !goingToEnd;
+            phase = Phase.Waiting;
+            timer = waitTime;
+        }
     }
 
     Vector3 GetOffset()
     {
-        Vector3 offset;
-        switch (axis)
+        Vector3 offset = axis switch
         {
-            case Axis.X: offset = Vector3.right * distance;   break;
-            case Axis.Y: offset = Vector3.up * distance;      break;
-            case Axis.Z: offset = Vector3.forward * distance; break;
-            default:     offset = customOffset;               break;
-        }
-
+            Axis.X => Vector3.right * distance,
+            Axis.Y => Vector3.up * distance,
+            Axis.Z => Vector3.forward * distance,
+            _ => customOffset
+        };
         return useLocalAxis ? transform.TransformDirection(offset) : offset;
     }
 
-    void OnDrawGizmos()
+    void OnDrawGizmosSelected()
     {
-        Vector3 from = Application.isPlaying ? startPos : transform.position;
-        Vector3 to = Application.isPlaying ? endPos : transform.position + GetOffset();
-
+        Vector3 a = Application.isPlaying ? startPos : transform.position;
+        Vector3 b = Application.isPlaying ? endPos : a + GetOffset();
         Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(from, to);
-        Gizmos.DrawWireSphere(to, 0.3f);
+        Gizmos.DrawLine(a, b);
+        Gizmos.DrawWireSphere(b, 0.3f);
     }
 }
