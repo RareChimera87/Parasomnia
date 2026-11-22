@@ -1306,7 +1306,7 @@ GameObject:
   - component: {fileID: 441716510}
   - component: {fileID: 441716518}
   - component: {fileID: 441716519}
-  - component: {fileID: 441716520}
+  - component: {fileID: 441716521}
   m_Layer: 0
   m_Name: FreeLook Camera
   m_TagString: Untagged
@@ -1561,7 +1561,7 @@ MonoBehaviour:
   Offset: {x: 0, y: 0, z: 0}
   ApplyAfter: 1
   PreserveComposition: 0
---- !u!114 &441716520
+--- !u!114 &441716521
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1570,36 +1570,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 441716509}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dbe43d662878a7c43bcd44d43c9e2094, type: 3}
+  m_Script: {fileID: 11500000, guid: 6be594084ea395e46b439d6744022dc3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CollideAgainst:
+  collideAgainst:
     serializedVersion: 2
     m_Bits: 1
-  IgnoreTag: Player
-  TransparentLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  MinimumDistanceFromTarget: 0.3
-  AvoidObstacles:
-    Enabled: 1
-    DistanceLimit: 0
-    MinimumOcclusionTime: 0
-    CameraRadius: 0.3
-    UseFollowTarget:
-      Enabled: 0
-      YOffset: 0
-    Strategy: 0
-    MaximumEffort: 4
-    SmoothingTime: 0.15
-    Damping: 0.3
-    DampingWhenOccluded: 0.2
-  ShotQualityEvaluation:
-    Enabled: 0
-    OptimalDistance: 10
-    NearLimit: 5
-    FarLimit: 30
-    MaxQualityBoost: 0.2
+  cameraRadius: 0.3
+  minDistance: 0.5
 --- !u!4 &446347355 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ef69ab840e2885c46b8775501f9b9512, type: 3}
@@ -3490,6 +3468,9 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 945619346}
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4911479930820998609, guid: 69eb54bcf73c4ae458525296e3e197d2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2054900556}
     - targetCorrespondingSourceObject: {fileID: 5695116183205844072, guid: 69eb54bcf73c4ae458525296e3e197d2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 525402113}
@@ -7234,6 +7215,33 @@ MonoBehaviour:
   maxAngle: 70
   targetHeight: 0.8
   activeFromStart: 0
+--- !u!1 &2054900552 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4911479930820998609, guid: 69eb54bcf73c4ae458525296e3e197d2, type: 3}
+  m_PrefabInstance: {fileID: 887760063}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &2054900556
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2054900552}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -6115347106902280640, guid: a8350cc73b86dca418cbab7c5ecdd2a9, type: 3}
 --- !u!1 &2056511603
 GameObject:
   m_ObjectHideFlags: 0
