@@ -6,6 +6,7 @@ public class FallingPlatform : MonoBehaviour
     [Header("Temblor")]
     [SerializeField] float shakeTime = 1f;
     [SerializeField] float shakeAmount = 0.05f;
+    [Tooltip("Lo que tiembla (el modelo). Si se deja vacío, tiembla este objeto")]
     [SerializeField] Transform visual;
 
     [Header("Caída")]
@@ -16,8 +17,15 @@ public class FallingPlatform : MonoBehaviour
     [SerializeField] bool respawn = true;
     [SerializeField] float respawnTime = 4f;
 
+    [Header("Sonido")]
+    [SerializeField] AudioSource audioSource;
+    [Tooltip("Suena mientras tiembla")]
+    [SerializeField] AudioClip shakeClip;
+    [Tooltip("Suena cuando se suelta y cae")]
+    [SerializeField] AudioClip fallClip;
+
     Vector3 startPos;
-    Vector3 visualStartLocalPos;
+    Vector3 visualStartLocal;
     Collider[] colliders;
     Renderer[] renderers;
     bool triggered;
@@ -26,11 +34,12 @@ public class FallingPlatform : MonoBehaviour
     {
         startPos = transform.position;
         if (visual == null) visual = transform;
-        visualStartLocalPos = visual.localPosition;
+        visualStartLocal = visual.localPosition;
         colliders = GetComponentsInChildren<Collider>();
         renderers = GetComponentsInChildren<Renderer>();
     }
 
+    // La llama PlayerMovement cuando el jugador se para encima
     public void Trigger()
     {
         if (triggered) return;
@@ -40,18 +49,22 @@ public class FallingPlatform : MonoBehaviour
 
     IEnumerator Sequence()
     {
-        // 1. Temblar, cada vez más fuerte
+        // 1. Tiembla cada vez más fuerte
+        PlaySound(shakeClip);
         float t = 0f;
         while (t < shakeTime)
         {
             t += Time.deltaTime;
-            float intensity = shakeAmount * (t / shakeTime);
-            visual.localPosition = visualStartLocalPos + Random.insideUnitSphere * intensity;
+            float amount = shakeAmount * (t / shakeTime);
+            visual.localPosition = visualStartLocal + Random.insideUnitSphere * amount;
             yield return null;
         }
-        visual.localPosition = visualStartLocalPos;
+        visual.localPosition = visualStartLocal;
 
-        // 2. Caer acelerando
+        // 2. Se suelta y cae acelerando
+        if (audioSource != null) audioSource.Stop();
+        PlaySound(fallClip);
+
         float speed = 0f;
         t = 0f;
         while (t < fallTime)
@@ -62,11 +75,11 @@ public class FallingPlatform : MonoBehaviour
             yield return null;
         }
 
+        // 3. Desaparece
         SetVisible(false);
-
-        // 3. Reaparecer
         if (!respawn) yield break;
 
+        // 4. Reaparece en su lugar
         yield return new WaitForSeconds(respawnTime);
         transform.position = startPos;
         SetVisible(true);
@@ -75,7 +88,12 @@ public class FallingPlatform : MonoBehaviour
 
     void SetVisible(bool visible)
     {
-        foreach (Collider c in colliders) c.enabled = visible;
         foreach (Renderer r in renderers) r.enabled = visible;
+        foreach (Collider c in colliders) c.enabled = visible;
+    }
+
+    void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
     }
 }

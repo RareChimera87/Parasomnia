@@ -21,6 +21,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] AudioClip crushedDeath;
     [SerializeField] AudioClip monsterDeath;
     [SerializeField] AudioClip eyesDeath;
+    [SerializeField] AudioClip victoryClip;
 
     public UnityEvent OnPlayerDied;
     public UnityEvent OnPlayerRespawned;
@@ -31,6 +32,7 @@ public class GameManager : MonoBehaviour
     {
         Instance = this;
         Time.timeScale = 1f;
+        if (sfxSource != null) sfxSource.ignoreListenerPause = true;
     }
 
     public void PlayerDied(DeathCause cause = DeathCause.General)
@@ -62,17 +64,20 @@ public class GameManager : MonoBehaviour
     {
         if (IsGameOver) return;
         EndGame();
+        if (sfxSource != null && victoryClip != null) sfxSource.PlayOneShot(victoryClip);
         victoryScreen.Show();
     }
 
     public void RestartLevel()
     {
+        AudioListener.pause = false;
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void GoToMenu()
     {
+        AudioListener.pause = false;
         Time.timeScale = 1f;
         SceneManager.LoadScene(menuSceneName);
     }
@@ -95,5 +100,6 @@ public class GameManager : MonoBehaviour
         if (cursorLock != null) cursorLock.enabled = false;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        AudioListener.pause = true;
     }
 }

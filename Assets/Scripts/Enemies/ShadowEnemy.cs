@@ -3,7 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class ShadowEnemy : MonoBehaviour
 {
-    enum State { Idle, Chasing, Stunned, Banished, Returning }
+    public enum State { Idle, Chasing, Stunned, Banished, Returning }
     public enum ActivationMode { Proximity, Light, Sight }
 
     [Header("Referencias")]
@@ -31,6 +31,10 @@ public class ShadowEnemy : MonoBehaviour
     [SerializeField] float timeToBanish = 2f;
     [SerializeField] float respawnTime = 8f;
     [SerializeField] float shakeAmount = 0.08f;
+    [Tooltip("Altura del punto que la linterna debe iluminar (el pecho del monstruo)")]
+    [SerializeField] float lightCheckHeight = 1f;
+    [Tooltip("Segundos que se ve la animación de muerte antes de desaparecer")]
+    [SerializeField] float dyingTime = 1.5f;
 
     [Header("Debug")]
     [SerializeField] State state = State.Idle;
@@ -39,12 +43,16 @@ public class ShadowEnemy : MonoBehaviour
     Quaternion homeRotation;
     float lightTimer;
     float banishTimer;
+    float dyingTimer;
     Collider[] colliders;
 
     Vector3 PlayerTarget => player.position + Vector3.up * targetHeight;
+    Vector3 LightPoint => transform.position + Vector3.up * lightCheckHeight;
     float DistanceToPlayer => Vector3.Distance(transform.position, PlayerTarget);
-    bool IsLit => flashlight.IsIlluminating(transform.position);
+    bool IsLit => flashlight.IsIlluminating(LightPoint);
+
     public bool IsActive => state == State.Chasing || state == State.Stunned;
+    public State CurrentState => state;
 
     void Awake()
     {
@@ -53,8 +61,14 @@ public class ShadowEnemy : MonoBehaviour
         colliders = GetComponentsInChildren<Collider>();
         GetComponent<Rigidbody>().isKinematic = true;
 
-        if (player == null) player = GameObject.FindWithTag("Player").transform;
-        if (flashlight == null) flashlight = player.GetComponent<Flashlight>();
+        // Se busca solo: así funciona como prefab en cualquier parte
+        if (player == null)
+        {
+            GameObject p = GameObject.FindWithTag("Player");
+            if (p != null) player = p.transform;
+        }
+        if (flashlight == null && player != null)
+            flashlight = player.GetComponent<Flashlight>();
     }
 
     void Start()
@@ -135,7 +149,8 @@ public class ShadowEnemy : MonoBehaviour
         }
 
         lightTimer = Mathf.Max(lightTimer - Time.deltaTime * 0.5f, 0f);
-        MoveTowards(PlayerTarget, chaseSpeed);
+        // Persigue los pies del niño (no un punto en el aire)
+        MoveTowards(player.position, chaseSpeed);
     }
 
     void UpdateStunned()
@@ -148,9 +163,15 @@ public class ShadowEnemy : MonoBehaviour
 
         lightTimer += Time.deltaTime;
 
-        Vector3 away = (transform.position - player.position);
+        // Retrocede alejándose del niño...
+        Vector3 away = transform.position - player.position;
         away.y = 0f;
         transform.position += away.normalized * retreatSpeed * Time.deltaTime;
+
+        // ...pero sin dejar de mirarlo
+        Vector3 toPlayer = -away;
+        if (toPlayer.sqrMagnitude > 0.01f)
+            transform.rotation = Quaternion.LookRotation(toPlayer);
 
         visual.transform.localPosition = Random.insideUnitSphere * shakeAmount;
 
@@ -160,6 +181,14 @@ public class ShadowEnemy : MonoBehaviour
 
     void UpdateBanished()
     {
+        // Primero se ve la animación de muerte, luego desaparece
+        if (dyingTimer > 0f)
+        {
+            dyingTimer -= Time.deltaTime;
+            if (dyingTimer <= 0f)
+                visual.SetActive(false);
+        }
+
         banishTimer -= Time.deltaTime;
         if (banishTimer <= 0f)
             ResetEnemy();
@@ -195,7 +224,8 @@ public class ShadowEnemy : MonoBehaviour
     {
         lightTimer = 0f;
         banishTimer = respawnTime;
-        SetVisible(false);
+        dyingTimer = dyingTime;
+        SetColliders(false);          // ya no puede matar mientras muere
         SetState(State.Banished);
     }
 
@@ -203,6 +233,7 @@ public class ShadowEnemy : MonoBehaviour
     {
         transform.SetPositionAndRotation(homePosition, homeRotation);
         lightTimer = 0f;
+        dyingTimer = 0f;
         SetVisible(!hideWhileIdle);
         SetState(State.Idle);
     }
@@ -210,8 +241,13 @@ public class ShadowEnemy : MonoBehaviour
     void SetVisible(bool visible)
     {
         visual.SetActive(visible);
+        SetColliders(visible);
+    }
+
+    void SetColliders(bool enabled)
+    {
         foreach (Collider c in colliders)
-            c.enabled = visible;
+            c.enabled = enabled;
     }
 
     void SetState(State newState)
@@ -226,6 +262,10 @@ public class ShadowEnemy : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
         Gizmos.color = Color.gray;
         Gizmos.DrawWireSphere(transform.position, giveUpRadius);
+
+        // Punto que la linterna tiene que iluminar
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position + Vector3.up * lightCheckHeight, 0.2f);
 
         if (activation == ActivationMode.Sight)
         {
