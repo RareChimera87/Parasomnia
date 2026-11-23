@@ -774,7 +774,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47f09ac782836854381bd26fe6d37a64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cause: 0
+  cause: 4
 --- !u!114 &273702410
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1132,6 +1132,7 @@ GameObject:
   m_Component:
   - component: {fileID: 334485109}
   - component: {fileID: 334485110}
+  - component: {fileID: 334485111}
   m_Layer: 0
   m_Name: Point Light
   m_TagString: Untagged
@@ -1219,6 +1220,29 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!114 &334485111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 334485108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Version: 3
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_LightLayerMask: 1
+  m_RenderingLayers: 1
+  m_CustomShadowLayers: 0
+  m_ShadowLayerMask: 1
+  m_ShadowRenderingLayers: 1
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
 --- !u!4 &343569503 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1852576806548013000, guid: ef69ab840e2885c46b8775501f9b9512, type: 3}
@@ -1290,6 +1314,9 @@ MonoBehaviour:
   fallTime: 3
   respawn: 1
   respawnTime: 4
+  audioSource: {fileID: 0}
+  shakeClip: {fileID: 0}
+  fallClip: {fileID: 0}
 --- !u!1 &441716509
 GameObject:
   m_ObjectHideFlags: 0
@@ -2188,11 +2215,12 @@ MonoBehaviour:
   menuSceneName: MainMenu
   sfxSource: {fileID: 621501336}
   generalDeath: {fileID: 8300000, guid: 9744d1c4cbcf5d84fbcc70e872d25fd9, type: 3}
-  fallDeath: {fileID: 8300000, guid: 67969b00d211f23408764aca0874a6b5, type: 3}
+  fallDeath: {fileID: 8300000, guid: 105763afa1b4857418f5e957f9932363, type: 3}
   teethDeath: {fileID: 8300000, guid: facd45ee52a66c041846ea8585301960, type: 3}
   crushedDeath: {fileID: 8300000, guid: 35d587d5428fec14390266fc901c390a, type: 3}
-  monsterDeath: {fileID: 8300000, guid: ac56e335459a87846b8b481e83d4cbe9, type: 3}
+  monsterDeath: {fileID: 8300000, guid: 41e4c1c4e4169c94eaca42fefd2f77f0, type: 3}
   eyesDeath: {fileID: 8300000, guid: f007f7d3f2e8c274e8525aecb761325d, type: 3}
+  victoryClip: {fileID: 8300000, guid: 2ba132f817b4c314b9b25e9172053b1a, type: 3}
   OnPlayerDied:
     m_PersistentCalls:
       m_Calls: []
@@ -2670,6 +2698,9 @@ MonoBehaviour:
   fallTime: 3
   respawn: 1
   respawnTime: 4
+  audioSource: {fileID: 0}
+  shakeClip: {fileID: 0}
+  fallClip: {fileID: 0}
 --- !u!1 &679021321 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -5703438412403388546, guid: 432fc3986d4713445a205c34ac17b0f0, type: 3}
@@ -3114,7 +3145,7 @@ Transform:
   m_GameObject: {fileID: 857650497}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 4.53, z: 100.13}
+  m_LocalPosition: {x: 0, y: 4.53, z: 98.19}
   m_LocalScale: {x: 11.737442, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3264,6 +3295,9 @@ MonoBehaviour:
   fallTime: 3
   respawn: 1
   respawnTime: 4
+  audioSource: {fileID: 0}
+  shakeClip: {fileID: 0}
+  fallClip: {fileID: 0}
 --- !u!1 &868657805
 GameObject:
   m_ObjectHideFlags: 0
@@ -3396,6 +3430,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1948132182}
     m_Modifications:
+    - target: {fileID: 454085169954258253, guid: 69eb54bcf73c4ae458525296e3e197d2, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 780910408625252816, guid: 69eb54bcf73c4ae458525296e3e197d2, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.1013
@@ -4559,6 +4597,9 @@ MonoBehaviour:
   fallTime: 3
   respawn: 1
   respawnTime: 4
+  audioSource: {fileID: 0}
+  shakeClip: {fileID: 0}
+  fallClip: {fileID: 0}
 --- !u!1 &1299059031
 GameObject:
   m_ObjectHideFlags: 0
@@ -5535,6 +5576,9 @@ MonoBehaviour:
   fallTime: 3
   respawn: 1
   respawnTime: 4
+  audioSource: {fileID: 0}
+  shakeClip: {fileID: 0}
+  fallClip: {fileID: 0}
 --- !u!1 &1605715505
 GameObject:
   m_ObjectHideFlags: 0
