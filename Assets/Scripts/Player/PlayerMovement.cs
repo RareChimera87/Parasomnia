@@ -20,7 +20,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float coyoteTime = 0.15f;
     [SerializeField] float jumpBufferTime = 0.15f;
 
-    [Header("Escalar")]                                   // NUEVO
+    [Header("Escalar")]
     [SerializeField] float climbSpeed = 2.5f;
     [SerializeField] float climbCheckDistance = 0.6f;
     [SerializeField] float climbCheckHeight = 0.65f;
@@ -31,7 +31,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Referencias")]
     [SerializeField] Transform cameraTransform;
 
-    public bool IsClimbing { get; private set; }          // NUEVO
+    public bool IsClimbing { get; private set; }
 
     CharacterController controller;
     PlayerInputHandler input;
@@ -41,8 +41,12 @@ public class PlayerMovement : MonoBehaviour
     float jumpBufferTimer;
     MovingPlatform currentPlatform;
     Hazard hitHazard;
-    Vector3 wallNormal;                                   // NUEVO
-    float regrabTimer;                                    // NUEVO
+    Vector3 wallNormal;
+    float regrabTimer;
+
+    // ¿Está en el piso? Se guarda justo después del movimiento principal.
+    // (controller.isGrounded cambia con CUALQUIER Move, incluso el de la plataforma)
+    bool grounded;
 
     void Awake()
     {
@@ -53,13 +57,14 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        if (currentPlatform != null)
+        // Arrastrar con la plataforma, solo si de verdad se movió
+        if (currentPlatform != null && currentPlatform.Delta != Vector3.zero)
             controller.Move(currentPlatform.Delta);
         currentPlatform = null;
 
-        regrabTimer -= Time.deltaTime;                    // NUEVO
+        regrabTimer -= Time.deltaTime;
 
-        if (IsClimbing)                                   // NUEVO
+        if (IsClimbing)
         {
             HandleClimbing();
         }
@@ -73,6 +78,7 @@ public class PlayerMovement : MonoBehaviour
 
             Vector3 velocity = horizontalVelocity + Vector3.up * verticalVelocity;
             controller.Move(velocity * Time.deltaTime);
+            grounded = controller.isGrounded;
 
             if ((controller.collisionFlags & CollisionFlags.Above) != 0 && verticalVelocity > 0f)
                 verticalVelocity = 0f;
@@ -112,7 +118,7 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleJump()
     {
-        if (controller.isGrounded)
+        if (grounded)
             coyoteTimer = coyoteTime;
         else
             coyoteTimer -= Time.deltaTime;
@@ -132,7 +138,7 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleGravity()
     {
-        if (controller.isGrounded && verticalVelocity < 0f)
+        if (grounded && verticalVelocity < 0f)
         {
             verticalVelocity = -2f;
             return;
@@ -147,7 +153,7 @@ public class PlayerMovement : MonoBehaviour
         verticalVelocity += gravity * multiplier * Time.deltaTime;
     }
 
-    // ---------- Escalar (NUEVO) ----------
+    // ---------- Escalar ----------
 
     bool FindClimbableWall(out RaycastHit hit)
     {
@@ -205,7 +211,7 @@ public class PlayerMovement : MonoBehaviour
         transform.rotation = Quaternion.LookRotation(-wallNormal);
 
         // Bajó hasta el suelo: se suelta
-        if (controller.isGrounded && move.y < -0.1f)
+        if (grounded && move.y < -0.1f)
         {
             StopClimbing();
             return;
@@ -216,6 +222,7 @@ public class PlayerMovement : MonoBehaviour
         Vector3 stickToWall = -wallNormal * 0.5f;
 
         controller.Move((climbMove + stickToWall) * Time.deltaTime);
+        grounded = controller.isGrounded;
     }
 
     void StopClimbing()
@@ -245,15 +252,16 @@ public class PlayerMovement : MonoBehaviour
 
     public void Teleport(Vector3 position)
     {
-        IsClimbing = false;                               // NUEVO
+        IsClimbing = false;
         controller.enabled = false;
         transform.position = position;
         controller.enabled = true;
         horizontalVelocity = Vector3.zero;
         verticalVelocity = 0f;
+        grounded = false;
     }
 
-    void OnDrawGizmosSelected()                           // NUEVO
+    void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
         Vector3 origin = transform.position + Vector3.up * climbCheckHeight;
