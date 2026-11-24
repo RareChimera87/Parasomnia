@@ -63,13 +63,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Brillo: 0.838
+    - _Brillo: 0.7
     - _Progreso: 0
     - _QueueControl: 0
     - _QueueOffset: 0
     - _Ruido: 15
     m_Colors:
-    - _Color_carme: {r: 0.6039216, g: 0.18039209, b: 0.18039212, a: 0.7647059}
+    - _Color_carme: {r: 0.5943396, g: 0.30558026, b: 0.30558026, a: 0.45490196}
     - _Escala: {r: 1, g: 0.19, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
