@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] AudioClip monsterDeath;
     [SerializeField] AudioClip eyesDeath;
     [SerializeField] AudioClip victoryClip;
+    [SerializeField] DeathArtScreen deathArt;
 
     public UnityEvent OnPlayerDied;
     public UnityEvent OnPlayerRespawned;
@@ -41,7 +42,8 @@ public class GameManager : MonoBehaviour
         EndGame();
         OnPlayerDied?.Invoke();
         PlayDeathSound(cause);
-        gameOverScreen.Show();
+        if (deathArt != null) deathArt.Show(cause, gameOverScreen.Show);
+        else gameOverScreen.Show();
     }
 
     void PlayDeathSound(DeathCause cause)
